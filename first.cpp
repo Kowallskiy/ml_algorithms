@@ -2,37 +2,36 @@
 #pragma warning(disable: 4127)
 
 #include <iostream>
-#include <string>
 #include <Eigen/Dense>
-#include <set>
+#include "LinearRegression.cpp"
+
 
 int main() {
-    int x, y, z;
-    std::cin >> x >> y >> z;
-    int n;
+    
+    Eigen::MatrixXf X_train(4, 2);
+    X_train << 1, 2,
+        2, 3,
+        3, 4,
+        4, 5;
 
-    std::cin >> n;
+    Eigen::VectorXf y_train(4);
+    y_train << 3, 4, 5, 6;
 
-    std::string s = std::to_string(n);
+    Eigen::MatrixXf X_test(3, 2);
+    X_test << 5, 6,
+        6, 7,
+        7, 8;
 
-    int res = 0;
+    Eigen::VectorXf y_test(3);
+    y_test << 7, 8, 9;
 
-    std::set<int> set;
+    LinearRegression model;
 
-    for (char c : s) {
-        int i = c;
-        set.insert(i);
-    }
+    model.fit_normal(X_train, y_train);
 
-    for (int a : set) {
-        std::cout << a << "\n";
-        if (a != x && a != y && a != z) {
-            --res;
-        }
-    }
+    Eigen::VectorXf predictions = model.predict_normal(X_test);
 
-    res = res + static_cast<int>(set.size());
-    std::cout << res << "\n";
+    std::cout << "Predictions using Normal Equation: " << predictions << "\n";
 
     return 0;
 }
