@@ -1,0 +1,35 @@
+# Visual Studio files
+.vs/
+*.vcxproj.user
+*.vcxproj.filters
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build output directories
+x64/
+Debug/
+Release/
+*.obj
+*.exe
+*.pdb
+*.ilk
+*.idb
+*.ipch
+*.aps
+*.pch
+*.rsp
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Static libraries
+*.lib
+*.exp
+
+# Dynamic libraries
+*.dll
+*.so
+*.dylib
