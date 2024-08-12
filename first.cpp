@@ -29,7 +29,7 @@ int main() {
 
     model.fit_normal(X_train, y_train);
 
-    Eigen::VectorXf predictions = model.predict_normal(X_test);
+    Eigen::VectorXf predictions = model.predict_gradient(X_test);
 
     std::cout << "Predictions using Normal Equation: " << predictions << "\n";
 
