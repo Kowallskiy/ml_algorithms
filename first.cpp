@@ -27,7 +27,7 @@ int main() {
 
     LinearRegression model;
 
-    model.fit_normal(X_train, y_train);
+    model.fit_gradient(X_train, y_train, 0.01f); 
 
     Eigen::VectorXf predictions = model.predict_gradient(X_test);
 

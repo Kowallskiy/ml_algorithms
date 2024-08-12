@@ -40,6 +40,9 @@ public:
 	Eigen::VectorXf predict_normal(const Eigen::MatrixXf X) const {
 		Eigen::MatrixXf X_aug(X.rows(), X.cols() + 1);
 		X_aug << Eigen::VectorXf::Ones(X.rows()), X;
+
+		std::cout << "Weights: " << this->weights << "\n";
+
 		return X_aug * this->weights;
 	};
 
@@ -52,7 +55,7 @@ public:
 		this->w = Eigen::VectorXf::Ones(c);
 		this->b = 1.0f;
 
-		for (int i = 0; i <= 10; ++i) {
+		for (int i = 0; i <= 50; ++i) {
 			Eigen::VectorXf y_pred = X * this->w + Eigen::VectorXf::Ones(r) * this->b;
 			Eigen::VectorXf d_w = (1.0f / r) * X.transpose() * (y_pred - y);
 			float d_b = (1.0f / r) * (y_pred - y).sum();
