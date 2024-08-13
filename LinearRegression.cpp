@@ -28,7 +28,9 @@ public:
 			this->weights = XtX.inverse() * X_aug.transpose() * y;
 		}
 		else {
-			std::cerr << "Matrix is singular, cannot perform inversion\n";
+			std::cout << "Matrix is singular, cannot perform inversion\n";
+			std::cout << "Automatically calculating weights and biases with Gradient Descent\n";
+			fit_gradient(X, y);
 			return;
 		}
 
@@ -38,16 +40,11 @@ public:
 
 	// Prediction for the Normal Equation
 	Eigen::VectorXf predict_normal(const Eigen::MatrixXf X) const {
-		Eigen::MatrixXf X_aug(X.rows(), X.cols() + 1);
-		X_aug << Eigen::VectorXf::Ones(X.rows()), X;
-
-		std::cout << "Weights: " << this->weights << "\n";
-
-		return X_aug * this->weights;
+		return X * this->w + Eigen::VectorXf::Ones(X.rows()) * this->b;
 	};
 
 	// Calculate weights and biases by using gradient descent
-	void fit_gradient(const Eigen::MatrixXf& X, const Eigen::VectorXf& y, const float alpha) {
+	void fit_gradient(const Eigen::MatrixXf& X, const Eigen::VectorXf& y, const float alpha = 0.01f) {
 		Eigen::Index c = X.cols();
 		Eigen::Index r = X.rows();
 		std::cout << "The message\n";
@@ -69,6 +66,5 @@ public:
 
 	Eigen::VectorXf predict_gradient(const Eigen::MatrixXf& X) {
 		return X * this->w + Eigen::VectorXf::Ones(X.rows()) * this->b;
-		// X (r x c) -> w (c x 1)
 	};
 };
