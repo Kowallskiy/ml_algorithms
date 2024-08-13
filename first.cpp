@@ -24,12 +24,12 @@ int main() {
 
     Eigen::VectorXf y_test(3);
     y_test << 7, 8, 9;
-
+    
     LinearRegression model;
 
-    model.fit_gradient(X_train, y_train, 0.01f); 
+    model.fit_normal(X_train, y_train); 
 
-    Eigen::VectorXf predictions = model.predict_gradient(X_test);
+    Eigen::VectorXf predictions = model.predict_normal(X_test);
 
     std::cout << "Predictions using Normal Equation: " << predictions << "\n";
 
