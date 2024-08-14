@@ -139,6 +139,7 @@
   <ItemGroup>
     <ClCompile Include="first.cpp" />
     <ClCompile Include="LinearRegression.cpp" />
+    <ClCompile Include="LogisticRegression.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />
