@@ -6,6 +6,8 @@
 #include "LinearRegression.h"
 
 
+// cmake -DCMAKE_TOOLCHAIN_FILE=C:/tools/vcpkg/scripts/buildsystems/vcpkg.cmake ..
+
 LinearRegression::LinearRegression() : weights{}, w{}, b{} {};
 
 // Calculate weights and biases by using Normal Equation
