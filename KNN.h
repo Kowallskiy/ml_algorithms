@@ -4,8 +4,15 @@
 
 
 class KNNClassifier {
-public:
-	void fit(const Eigen::MatrixXf& X, const Eigen::VectorXf& y);
+private:
+	int k;
+	Eigen::MatrixXf X_original;
+	Eigen::VectorXf y_original;
 
-	Eigen::VectorXf predict(const Eigen::MatrixXf& X);
+public:
+	void fit(const Eigen::MatrixXf& X, const Eigen::VectorXf& y, int k = 5);
+
+	Eigen::VectorXf calculate_distances(const Eigen::VectorXf& x_test);
+
+	int predict(const Eigen::VectorXf& x_test);
 };
