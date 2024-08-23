@@ -5,36 +5,44 @@
 
 #include <iostream>
 #include <Eigen/Dense>
-#include "LinearRegression.h"
+#include "KNN.h"
 
 
 
 int main() {
     
-    Eigen::MatrixXf X_train(6, 2);
-    X_train << 1, 2,
-        2, 3,
-        3, 4,
-        4, 5,
-        5, 6,
-        6, 7;
+    Eigen::MatrixXf X_train(9, 2);
+    X_train << -1, 1,
+        -1, -1,
+        1, -1,
+        1, 1,
+        1.5f, 1.4f,
+        1.3f, 1.7f,
+        -0.5f, -1,
+        2, -1.5f,
+        -2, -2;
 
-    Eigen::VectorXf y_train(6);
-    y_train << 3, 4, 5, 6, 7, 8;
+    Eigen::VectorXf y_train(9);
+    y_train << 1, 2, 3, 4, 4, 4, 2, 3, 2;
 
     Eigen::MatrixXf X_test(4, 2);
-    X_test << 7, 8,
-        8, 9,
-        9, 10,
-        10, 11;
+    X_test << -1.5f, 1,
+        -1.5f, -1.5f,
+        1.5f, 1.5f,
+        2, -1;
+    Eigen::VectorXf x_test(2);
+    x_test << -1.0f, 1.5f;
+
     
-    LinearRegression model;
+    KNNClassifier model;
 
-    model.fit_gradient(X_train, y_train); 
+    int k = 1;
 
-    Eigen::VectorXf predictions = model.predict_gradient(X_test);
+    model.fit(X_train, y_train, k); 
 
-    std::cout << "Predictions using Normal Equation: " << predictions << "\n";
+    float prediction = model.predict(x_test);
+
+    std::cout << "Predictions using Normal Equation: " << prediction << "\n";
 
     return 0;
 }
