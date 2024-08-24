@@ -23,12 +23,15 @@ std::vector<int> getRandomIndices(int numSamples, int k) {
 
 void KMeans::fit(Eigen::MatrixXf& X) {
 	int numSamples = X.rows();
+	int numFeatures = X.cols();
 
 	std::vector<int> indices = getRandomIndices(numSamples, this->k);
 
-	Eigen::MatrixXf centroids;
-	// add the rows of random indices to the 'centroids'
-
+	Eigen::MatrixXf centroids(this->k, numFeatures);
+	
+	for (int i = 0; i < this->k; ++i) {
+		centroids.row(i) = X.row(indices[i]);
+	}
 
 	Eigen::MatrixXf distances(k, numSamples);
 
