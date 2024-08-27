@@ -5,6 +5,7 @@
 class KMeans {
 private:
 	int k;
+	Eigen::MatrixXf centroids;
 public:
 
 	KMeans(int k);
