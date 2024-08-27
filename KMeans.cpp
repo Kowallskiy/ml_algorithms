@@ -7,7 +7,7 @@
 #include <numeric>
 #include "KMeans.h"
 
-KMeans::KMeans(int k) : k{k} {};
+KMeans::KMeans(int k) : k{ k }, centroids{} {};
 
 std::vector<int> getRandomIndices(int numSamples, int k) {
 	std::vector<int> indices(numSamples);
@@ -27,17 +27,17 @@ void KMeans::fit(Eigen::MatrixXf& X) {
 
 	std::vector<int> indices = getRandomIndices(numSamples, this->k);
 
-	Eigen::MatrixXf centroids(this->k, numFeatures);
+	this->centroids(this->k, numFeatures);
 	
 	for (int i = 0; i < this->k; ++i) {
-		centroids.row(i) = X.row(indices[i]);
+		this->centroids.row(i) = X.row(indices[i]);
 	}
 
 	Eigen::MatrixXf distances(k, numSamples);
 
 	for (int i = 0; i < this->k; ++i) {
 		for (int j = 0; j < numSamples; ++j) {
-			Eigen::VectorXf diff = X.row(j) - centroids.row(i);
+			Eigen::VectorXf diff = X.row(j) - this->centroids.row(i);
 
 			distances(i, j) = diff.squaredNorm();
 		}
@@ -55,21 +55,37 @@ void KMeans::fit(Eigen::MatrixXf& X) {
 		}
 		labels.push_back(curLabel);
 	}
-	// stores the distances to the corresponding labels
-	std::unordered_map<int, float> labelDistToItsCentroid;
-	for (int i = 0; i < labels.size(); ++i) {
-		labelDistToItsCentroid[labels[i]] += distances(labels[i], i);
-	}
-
-	std::vector<float> updateVal(this->k);
-	for (int i = 0; i < this->k; ++i) {
-		updateVal[i] = labelDistToItsCentroid[i] / std::count(labels.begin(), labels.end(), i);
-	}
-
-
 	
+	Eigen::MatrixXf sumCentroids = Eigen::MatrixXf::Zero(this->k, numFeatures);
+	Eigen::VectorXi countSamplesPerCluster = Eigen::VectorXi::Zero(this->k);
+	for (int i = 0; i < numSamples; ++i) {
+		sumCentroids.row(labels[i]) += X.row(i);
+		countSamplesPerCluster[labels[i]]++;
+	}
+
+	for (int i = 0; i < this->k; ++i) {
+		if (countSamplesPerCluster[i] != 0) {
+			centroids.row(i) = sumCentroids.row(i) / countSamplesPerCluster[i];
+		}
+	}
+
 }
 
 Eigen::VectorXf KMeans::predict(Eigen::MatrixXf& X) {
+	int numSamples = X.rows();
+	int numFeatures = X.cols();
 
+	Eigen::MatrixXf distances(this->k, numSamples);
+	for (int i = 0; i < this->k; ++i) {
+		for (int j = 0; j < numSamples; ++j) {
+			Eigen::VectorXf diff = X.row(i) - this->centroids.row(i);
+			distances(i, j) = diff.squaredNorm();
+
+		}
+	}
+
+	Eigen::VectorXf resultLabels(numSamples);
+	for (int i = 0; i < numSamples; ++i) {
+
+	}
 }
