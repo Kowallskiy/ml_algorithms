@@ -93,12 +93,33 @@ Tree splitTree(Tree& node, Eigen::MatrixXf& X, Eigen::VectorXf& y) {
 	Eigen::MatrixXf X_left, X_right;
 	Eigen::VectorXf y_left, y_right;
 
-
+	std::vector<Eigen::VectorXf> X_left_rows, X_right_rows;
+	std::vector<float> y_left_labels, y_right_labels;
 
 	for (int i = 0; i < numSamples; ++i) {
-		if (X(i, featureIndex) < thresholdSplit) {
-			X_left << X.row(i);
+		if (X(i, featureIndex) <= thresholdSplit) {
+			X_left_rows.push_back(X.row(i));
+			y_left_labels.push_back(y[i]);
 		}
+		else {
+			X_right_rows.push_back(X.row(i));
+			y_right_labels.push_back(y[i]);
+		}
+	}
+
+	X_left.resize(X_left_rows.size(), numFeatures);
+	X_right.resize(X_right_rows.size(), numFeatures);
+	y_left.resize(y_left_labels.size());
+	y_right.resize(y_right_labels.size());
+
+	for (int i = 0; i < X_left_rows.size(); ++i) {
+		X_left.row(i) = X_left_rows[i];
+		y_left(i) = y_left_labels[i];
+	}
+
+	for (int i = 0; i < X_right_rows.size(); ++i) {
+		X_right.row(i) = X_right_rows[i];
+		y_right(i) = y_right_labels[i];
 	}
 
 }
