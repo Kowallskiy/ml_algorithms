@@ -57,11 +57,11 @@ Tree splitTree(Tree& node, Eigen::MatrixXf& X, Eigen::VectorXf& y) {
 			// Split the values in the feature into the left and the right based on the threshold
 			for (int i = 0; i < numSamples; ++i) {
 				if (featureVector[i] <= threshold) {
-					//X_left.push_back(featureVector[i]);
+					X_left.push_back(featureVector[i]);
 					y_left.push_back(y[i]);
 				}
 				else {
-					//X_right.push_back(featureVector[i]);
+					X_right.push_back(featureVector[i]);
 					y_right.push_back(y[i]);
 				}
 			}
@@ -89,8 +89,17 @@ Tree splitTree(Tree& node, Eigen::MatrixXf& X, Eigen::VectorXf& y) {
 	// and whe have the featureIndex (for us to knwo on which feature to split on the node)
 	node.threshold = thresholdSplit;
 	node.featureIndex = featureIndex;
-	// I need to store X_left, X_right, y_left and y_right for future splitting on the nodes.
-	Tree nodeLeft = Tree()
+	// Split the daataset X and y into the right and the left parts based on the threshold and the feature
+	Eigen::MatrixXf X_left, X_right;
+	Eigen::VectorXf y_left, y_right;
+
+
+
+	for (int i = 0; i < numSamples; ++i) {
+		if (X(i, featureIndex) < thresholdSplit) {
+			X_left << X.row(i);
+		}
+	}
 
 }
 
