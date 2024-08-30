@@ -31,7 +31,7 @@ float calculateGini(std::set<float> classes, std::vector<float> y, int size) {
 	return gini;
 }
 
-Tree splitTree(Tree& node, Eigen::MatrixXf& X, Eigen::VectorXf& y) {
+Tree splitTree(Tree* node, Eigen::MatrixXf& X, Eigen::VectorXf& y) {
 	// gini index
 	// implementation for continuous features
 	Eigen::Index numSamples = X.rows();
@@ -85,10 +85,7 @@ Tree splitTree(Tree& node, Eigen::MatrixXf& X, Eigen::VectorXf& y) {
 			}
 		}
 	}
-	// After the loop we have the threshold (we use it to split on the current node)
-	// and whe have the featureIndex (for us to knwo on which feature to split on the node)
-	node.threshold = thresholdSplit;
-	node.featureIndex = featureIndex;
+	
 	// Split the daataset X and y into the right and the left parts based on the threshold and the feature
 	Eigen::MatrixXf X_left, X_right;
 	Eigen::VectorXf y_left, y_right;
@@ -121,13 +118,21 @@ Tree splitTree(Tree& node, Eigen::MatrixXf& X, Eigen::VectorXf& y) {
 		X_right.row(i) = X_right_rows[i];
 		y_right(i) = y_right_labels[i];
 	}
+	node->threshold = thresholdSplit;
+	node->featureIndex = featureIndex;
+
+	node->left = new Tree(X_left, y_left);
+	node->right = new Tree(X_right, y_right);
+
+	splitTree(node->left, X_left, y_left);
+	splitTree(node->right, X_right, y_right);
 
 }
 
 void DecisionTree::fit(Eigen::MatrixXf& X, Eigen::VectorXf& y) {
 
-	Tree root = Tree(X, y);
+	Tree* root = new Tree(X, y);
 
-	Tree dummy = root;
+	splitTree(root, X, y);
 
 }
