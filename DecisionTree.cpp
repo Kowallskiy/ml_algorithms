@@ -17,9 +17,14 @@ struct Tree {
 	Tree() : X_values{}, y_values{}, left(nullptr), right(nullptr), threshold{}, featureIndex{} {}
 	Tree(Eigen::MatrixXf X, Eigen::VectorXf y) : X_values{ X }, y_values{ y }, left(nullptr), right(nullptr), threshold{}, featureIndex{} {}
 	Tree(Eigen::MatrixXf X, Eigen::VectorXf y, Tree* left, Tree* right) : X_values{ X }, y_values{ y }, left(left), right(right), threshold{}, featureIndex{} {}
+
+	~Tree() {
+		delete left;
+		delete right;
+	}
 };
 
-DecisionTree::DecisionTree() {};
+DecisionTree::DecisionTree() : root{nullptr} {};
 
 float calculateGini(std::set<float> classes, std::vector<float> y, int size) {
 	float gini{};
@@ -131,8 +136,21 @@ Tree splitTree(Tree* node, Eigen::MatrixXf& X, Eigen::VectorXf& y) {
 
 void DecisionTree::fit(Eigen::MatrixXf& X, Eigen::VectorXf& y) {
 
-	Tree* root = new Tree(X, y);
+	root = new Tree(X, y);
 
 	splitTree(root, X, y);
 
+}
+
+float predictSingleRow(const Eigen::VectorXf& X_row, Tree* node) {
+
+}
+
+Eigen::VectorXf DecisionTree::predict(Eigen::MatrixXf& X) {
+	Eigen::Index numSamples = X.rows();
+	std::vector<float> predictions;
+
+	for (int i = 0; i < numSamples; ++i) {
+		predictions.push_back(predictSingleRow(X.row(i), root));
+	}
 }
