@@ -1,4 +1,5 @@
-
+#pragma warning(disable: 5054) // Disable warning C5054
+#pragma warning(disable: 4127)
 
 #include <algorithm>
 #include <Eigen/Dense>
@@ -7,36 +8,25 @@
 #include <cmath>
 #include "DecisionTree.h"
 
-struct Tree {
-	Eigen::MatrixXf X_values;
-	Eigen::VectorXf y_values;
-	Tree *left;
-	Tree *right;
-	float threshold;
-	int featureIndex;
-	Tree() : X_values{}, y_values{}, left(nullptr), right(nullptr), threshold{}, featureIndex{} {}
-	Tree(Eigen::MatrixXf X, Eigen::VectorXf y) : X_values{ X }, y_values{ y }, left(nullptr), right(nullptr), threshold{}, featureIndex{} {}
-	Tree(Eigen::MatrixXf X, Eigen::VectorXf y, Tree* left, Tree* right) : X_values{ X }, y_values{ y }, left(left), right(right), threshold{}, featureIndex{} {}
+//DecisionTree::DecisionTree() : root{ nullptr }, maxDepth{} {};
 
-	~Tree() {
-		delete left;
-		delete right;
-	}
-};
+float calculateGini(std::set<float> classes, std::vector<float> y, float size) {
+	if (size == 0) return 0.0f;
 
-DecisionTree::DecisionTree() : root{nullptr} {};
-
-float calculateGini(std::set<float> classes, std::vector<float> y, int size) {
 	float gini{};
 
 	for (float clas : classes) {
-		gini += std::pow(std::count(y.begin(), y.end(), clas) / size, 2);
+		gini += float(std::pow(std::count(y.begin(), y.end(), clas) / size, 2));
 	}
-	gini = 1 - gini;
+	gini = 1.0f - gini;
 	return gini;
 }
 
-Tree splitTree(Tree* node, Eigen::MatrixXf& X, Eigen::VectorXf& y) {
+void DecisionTree::splitTree(Tree* node, Eigen::MatrixXf& X, Eigen::VectorXf& y, int depth) {
+	if (this->maxDepth <= depth) {
+		return;
+	}
+	depth++;
 	// gini index
 	// implementation for continuous features
 	Eigen::Index numSamples = X.rows();
@@ -45,7 +35,7 @@ Tree splitTree(Tree* node, Eigen::MatrixXf& X, Eigen::VectorXf& y) {
 	//std::set<float> classes(y.begin(), y.end());
 
 	int featureIndex{ -1 };
-	float informationGain{ 0 };
+	float informationGain{ -std::numeric_limits<float>::infinity() };
 	float thresholdSplit{};
 	
 	// This loop calculates Gini and IG for each split in each feature
@@ -75,11 +65,14 @@ Tree splitTree(Tree* node, Eigen::MatrixXf& X, Eigen::VectorXf& y) {
 			std::set<float> classesLeft(y_left.begin(), y_left.end());
 			std::set<float> classesRight(y_right.begin(), y_right.end());
 			
-			float giniLeft = calculateGini(classesLeft, y_left, y_left.size());
-			float giniRight = calculateGini(classesRight, y_right, y_right.size());
+			float giniLeft = calculateGini(classesLeft, y_left, float(y_left.size()));
+			float giniRight = calculateGini(classesRight, y_right, float(y_right.size()));
 
+			std::vector<float> y_vector(y.data(), y.data() + y.size());
+			std::set<float> classesParent(y_vector.begin(), y_vector.end());
+			float parentGini = calculateGini(classesParent, y_vector, float(y_vector.size()));
 			// Information Gain calculation
-			float IG = y_left.size() / y.size() * giniLeft + y_right.size() / y.size() * giniRight;
+			float IG = parentGini - (y_left.size() / float(y.size()) * giniLeft + y_right.size() / float(y.size()) * giniRight);
 
 			// Compare IG with the previous IG
 			// If current IG > previous IG, then we save the current IG and threshold
@@ -89,6 +82,9 @@ Tree splitTree(Tree* node, Eigen::MatrixXf& X, Eigen::VectorXf& y) {
 				thresholdSplit = threshold;
 			}
 		}
+	}
+	if (featureIndex == -1) {
+		return;
 	}
 	
 	// Split the daataset X and y into the right and the left parts based on the threshold and the feature
@@ -129,28 +125,56 @@ Tree splitTree(Tree* node, Eigen::MatrixXf& X, Eigen::VectorXf& y) {
 	node->left = new Tree(X_left, y_left);
 	node->right = new Tree(X_right, y_right);
 
-	splitTree(node->left, X_left, y_left);
-	splitTree(node->right, X_right, y_right);
+	splitTree(node->left, X_left, y_left, depth);
+	splitTree(node->right, X_right, y_right, depth);
 
 }
 
-void DecisionTree::fit(Eigen::MatrixXf& X, Eigen::VectorXf& y) {
+void DecisionTree::fit(Eigen::MatrixXf& X, Eigen::VectorXf& y, int depth) {
+
+	this->maxDepth = depth;
 
 	root = new Tree(X, y);
 
-	splitTree(root, X, y);
-
+	splitTree(root, X, y, 1);
 }
 
-float predictSingleRow(const Eigen::VectorXf& X_row, Tree* node) {
+float DecisionTree::predictSingleRow(const Eigen::VectorXf& X_row, Tree* node) {
+	if (node->left == nullptr && node->right == nullptr) {
+		std::unordered_map<float, int> countClasses;
 
+		for (int i = 0; i < node->y_values.size(); ++i) {
+			countClasses[node->y_values[i]] += 1;
+		}
+
+		float maxClass{ -1.0f };
+		int count{};
+
+		for (const auto& pair : countClasses) {
+			if (pair.second > count) {
+				count = pair.second;
+				maxClass = pair.first;
+			}
+		}
+
+		return maxClass;
+	}
+	
+	if (X_row[node->featureIndex] <= node->threshold) {
+		return predictSingleRow(X_row, node->left);
+	}
+	else {
+		return predictSingleRow(X_row, node->right);
+	}
 }
 
 Eigen::VectorXf DecisionTree::predict(Eigen::MatrixXf& X) {
 	Eigen::Index numSamples = X.rows();
-	std::vector<float> predictions;
+	Eigen::VectorXf predictions(numSamples);
 
 	for (int i = 0; i < numSamples; ++i) {
-		predictions.push_back(predictSingleRow(X.row(i), root));
+		predictions[i] = predictSingleRow(X.row(i), root);
 	}
+
+	return predictions;
 }

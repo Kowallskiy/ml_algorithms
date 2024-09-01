@@ -11,6 +11,7 @@ private:
 	Eigen::MatrixXf centroids;
 public:
 
+	KMeans() : k{ 3 } {}
 	KMeans(int k);
 
 	void fit(Eigen::MatrixXf& X);
