@@ -137,13 +137,29 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="first.cpp" />
+    <ClCompile Include="bindings.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="DecisionTree.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="KMeans.cpp" />
+    <ClCompile Include="KNN.cpp" />
     <ClCompile Include="LinearRegression.cpp" />
-    <ClCompile Include="load_dataset.cpp" />
     <ClCompile Include="LogisticRegression.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="DecisionTree.h" />
+    <ClInclude Include="KMeans.h" />
+    <ClInclude Include="KNN.h" />
+    <ClInclude Include="LinearRegression.h" />
+    <ClInclude Include="LogisticRegression.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="CMakeLists.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
