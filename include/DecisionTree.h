@@ -34,11 +34,11 @@ public:
 
 	void fit(Eigen::MatrixXf& X, Eigen::VectorXf& y, int depth);
 
-	Eigen::VectorXf predict(Eigen::MatrixXf& X);
+	std::pair<Eigen::VectorXf, Eigen::VectorXf> predict(Eigen::MatrixXf& X);
 
 private:
 
 	void splitTree(Tree* node, Eigen::MatrixXf& X, Eigen::VectorXf& y, int depth);
 
-	float predictSingleRow(const Eigen::VectorXf& X_row, Tree* node);
+	std::pair<float, float> predictSingleRow(const Eigen::VectorXf& X_row, Tree* node);
 };
