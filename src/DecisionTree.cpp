@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <Eigen/Dense>
 #include <vector>
+#include <unordered_map>
 #include <set>
 #include <cmath>
 #include "DecisionTree.h"
@@ -31,8 +32,6 @@ void DecisionTree::splitTree(Tree* node, Eigen::MatrixXf& X, Eigen::VectorXf& y,
 	// implementation for continuous features
 	Eigen::Index numSamples = X.rows();
 	Eigen::Index numFeatures = X.cols();
-
-	//std::set<float> classes(y.begin(), y.end());
 
 	int featureIndex{ -1 };
 	float informationGain{ -std::numeric_limits<float>::infinity() };
@@ -139,7 +138,7 @@ void DecisionTree::fit(Eigen::MatrixXf& X, Eigen::VectorXf& y, int depth) {
 	splitTree(root, X, y, 1);
 }
 
-float DecisionTree::predictSingleRow(const Eigen::VectorXf& X_row, Tree* node) {
+std::pair<float, float> DecisionTree::predictSingleRow(const Eigen::VectorXf& X_row, Tree* node) {
 	if (node->left == nullptr && node->right == nullptr) {
 		std::unordered_map<float, int> countClasses;
 
@@ -148,16 +147,19 @@ float DecisionTree::predictSingleRow(const Eigen::VectorXf& X_row, Tree* node) {
 		}
 
 		float maxClass{ -1.0f };
+		float confidence{};
 		int count{};
 
 		for (const auto& pair : countClasses) {
 			if (pair.second > count) {
 				count = pair.second;
 				maxClass = pair.first;
+				confidence = count / static_cast<float>(node->y_values.size());
 			}
 		}
+		std::pair<float, float> classAndProb{ maxClass, confidence };
 
-		return maxClass;
+		return classAndProb;
 	}
 	
 	if (X_row[node->featureIndex] <= node->threshold) {
@@ -168,13 +170,17 @@ float DecisionTree::predictSingleRow(const Eigen::VectorXf& X_row, Tree* node) {
 	}
 }
 
-Eigen::VectorXf DecisionTree::predict(Eigen::MatrixXf& X) {
+std::pair<Eigen::VectorXf, Eigen::VectorXf> DecisionTree::predict(Eigen::MatrixXf& X) {
 	Eigen::Index numSamples = X.rows();
 	Eigen::VectorXf predictions(numSamples);
+	Eigen::VectorXf confidence(numSamples);
 
 	for (int i = 0; i < numSamples; ++i) {
-		predictions[i] = predictSingleRow(X.row(i), root);
+		std::pair<float, float> temp;
+		 temp = predictSingleRow(X.row(i), root);
+		 predictions[i] = temp.first;
+		 confidence[i] = temp.second;
 	}
-
-	return predictions;
+	std::pair<Eigen::VectorXf, Eigen::VectorXf> result{ predictions, confidence };
+	return result;
 }
