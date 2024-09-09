@@ -5,6 +5,7 @@
 #include <Eigen/Dense>
 #include <vector>
 #include <unordered_map>
+#include <map>
 #include <set>
 #include <cmath>
 #include "DecisionTree.h"
@@ -133,33 +134,35 @@ void DecisionTree::fit(Eigen::MatrixXf& X, Eigen::VectorXf& y, int depth) {
 
 	this->maxDepth = depth;
 
+	std::set<float> classes;
+	for (int i = 0; i < y.size(); ++i) {
+		classes.insert(y[i]);
+	}
+	this->numClasses = static_cast<int>(classes.size());
+
 	root = new Tree(X, y);
 
 	splitTree(root, X, y, 1);
 }
 
-std::pair<float, float> DecisionTree::predictSingleRow(const Eigen::VectorXf& X_row, Tree* node) {
+std::vector<float> DecisionTree::predictSingleRow(const Eigen::VectorXf& X_row, Tree* node) {
 	if (node->left == nullptr && node->right == nullptr) {
-		std::unordered_map<float, int> countClasses;
+		std::map<int, int> countClasses;
 
 		for (int i = 0; i < node->y_values.size(); ++i) {
-			countClasses[node->y_values[i]] += 1;
+			countClasses[static_cast<int>(node->y_values[i])] += 1;
 		}
 
-		float maxClass{ -1.0f };
-		float confidence{};
-		int count{};
+		std::vector<float> rowLogits(this->numClasses, 0.0f);
 
-		for (const auto& pair : countClasses) {
-			if (pair.second > count) {
-				count = pair.second;
-				maxClass = pair.first;
-				confidence = count / static_cast<float>(node->y_values.size());
+		for (int i = 0; i < this->numClasses; ++i) {
+			if (countClasses.find(i) != countClasses.end()) {
+				rowLogits[i] = countClasses[i] / static_cast<float>(node->y_values.size());
 			}
+			
 		}
-		std::pair<float, float> classAndProb{ maxClass, confidence };
 
-		return classAndProb;
+		return rowLogits;		
 	}
 	
 	if (X_row[node->featureIndex] <= node->threshold) {
@@ -170,17 +173,13 @@ std::pair<float, float> DecisionTree::predictSingleRow(const Eigen::VectorXf& X_
 	}
 }
 
-std::pair<Eigen::VectorXf, Eigen::VectorXf> DecisionTree::predict(Eigen::MatrixXf& X) {
+std::vector<std::vector<float>> DecisionTree::predict(Eigen::MatrixXf& X) {
 	Eigen::Index numSamples = X.rows();
-	Eigen::VectorXf predictions(numSamples);
-	Eigen::VectorXf confidence(numSamples);
+	std::vector<std::vector<float>> logits(numSamples, std::vector<float>(this->numClasses));
 
 	for (int i = 0; i < numSamples; ++i) {
-		std::pair<float, float> temp;
-		 temp = predictSingleRow(X.row(i), root);
-		 predictions[i] = temp.first;
-		 confidence[i] = temp.second;
+		logits[i] = predictSingleRow(X.row(i), root);
 	}
-	std::pair<Eigen::VectorXf, Eigen::VectorXf> result{ predictions, confidence };
-	return result;
+
+	return logits;
 }
