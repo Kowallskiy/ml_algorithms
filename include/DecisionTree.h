@@ -28,17 +28,18 @@ class DecisionTree {
 private:
 	Tree* root;
 	int maxDepth;
+	int numClasses;
 
 public:
-	DecisionTree() : root(nullptr), maxDepth{} {}
+	DecisionTree() : root(nullptr), maxDepth{}, numClasses{} {}
 
 	void fit(Eigen::MatrixXf& X, Eigen::VectorXf& y, int depth);
 
-	std::pair<Eigen::VectorXf, Eigen::VectorXf> predict(Eigen::MatrixXf& X);
+	std::vector<std::vector<float>> predict(Eigen::MatrixXf& X);
 
 private:
 
 	void splitTree(Tree* node, Eigen::MatrixXf& X, Eigen::VectorXf& y, int depth);
 
-	std::pair<float, float> predictSingleRow(const Eigen::VectorXf& X_row, Tree* node);
+	std::vector<float> predictSingleRow(const Eigen::VectorXf& X_row, Tree* node);
 };
