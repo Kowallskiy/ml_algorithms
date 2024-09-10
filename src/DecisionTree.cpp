@@ -130,6 +130,150 @@ void DecisionTree::splitTree(Tree* node, Eigen::MatrixXf& X, Eigen::VectorXf& y,
 
 }
 
+std::pair<float, float> calculateMSE(std::vector<float>& X, std::vector<float>& y) {
+	float y_mean{ 0.0f };
+	for (int i = 0; i < y.size(); ++i) {
+		y_mean += y[i];
+	}
+	y_mean = y_mean / y.size();
+	float mse{ 0.0f };
+	for (int i = 0; i < y.size(); ++i) {
+		mse += std::pow((y[i] - y_mean), 2);
+	}
+	mse = mse / y.size();
+	std::pair<float, float> result{ mse, y_mean };
+	return result;
+}
+
+void DecisionTree::splitTreeRegression(Tree* node, Eigen::MatrixXf& X, Eigen::VectorXf& y, int depth) {
+	if (depth > this->maxDepth) return;
+
+	Eigen::Index numSamples = X.rows();
+	Eigen::Index numFeatures = X.cols();
+
+	float bestThreshold{ 0.0f };
+	float bestMSE = std::numeric_limits<float>::infinity();
+	int featureSplitIndex{ -1 };
+	float yMeanLeft{};
+	float yMeanRight{};
+
+	for (int c = 0; c < numSamples; ++c) {
+		
+		std::vector<int> indices(y.size());
+		for (int i = 0; i < y.size(); ++i) {
+			indices[i] = i;
+		}
+		Eigen::VectorXf featureVector = X.col(c);
+		std::sort(indices.begin(), indices.end(), [&featureVector](int i1, int i2) { return featureVector[i1] < featureVector[i2]; });
+		
+		Eigen::VectorXf sortedFeature(y.size());
+		Eigen::VectorXf sortedY(y.size());
+
+		for (int i = 0; i < y.size(); ++i) {
+			sortedFeature[i] = featureVector[indices[i]];
+			sortedY[i] = y[indices[i]];
+		}
+
+		for (int r = 0; r < numFeatures - 1; ++r) {
+			float threshold = (sortedFeature[r] + sortedFeature[r + 1]) / 2;
+			std::vector<float> X_left, y_left, X_right, y_right;
+			for (int i = 0; i < r + 1; ++i) {
+				X_left.push_back(sortedFeature[i]);
+				y_left.push_back(sortedY[i]);
+			}
+			for (int i = (r + 1); i < y.size(); ++i) {
+				X_right.push_back(sortedFeature[i]);
+				y_right.push_back(sortedY[i]);
+			}
+			std::pair<float, float> mseLeft = calculateMSE(X_left, y_left);
+			std::pair<float, float> mseRight = calculateMSE(X_right, y_right);
+
+			float weightedMSE = (y_left.size() / y.size()) * mseLeft.first + (y_right.size() / y.size()) * mseRight.first;
+
+			if (weightedMSE < bestMSE) {
+				bestMSE = weightedMSE;
+				bestThreshold = threshold;
+				featureSplitIndex = c;
+				yMeanLeft = mseLeft.second;
+				yMeanRight = mseRight.second;
+			}
+		}
+	}
+	if (featureSplitIndex == -1) return;
+
+	Eigen::MatrixXf X_left_split, X_right_split;
+	Eigen::VectorXf y_left_split, y_right_split;
+
+	std::vector<Eigen::VectorXf> X_l_v, X_r_v;
+	std::vector<float> y_l_v, y_r_v;
+
+	for (int i = 0; i < X.rows(); ++i) {
+		if (X(i, featureSplitIndex) <= bestThreshold) {
+			X_l_v.push_back(X.row(i));
+			y_l_v.push_back(y[i]);
+		}
+		else {
+			X_r_v.push_back(X.row(i));
+			y_r_v.push_back(y[i]);
+		}
+	}
+	X_left_split.resize(X_l_v.size(), y.size());
+	X_right_split.resize(X_r_v.size(), y.size());
+	y_left_split.resize(y_l_v.size());
+	y_right_split.resize(y_r_v.size());
+
+	for (int i = 0; i < X_l_v.size(); ++i) {
+		X_left_split.row(i) = X_l_v[i];
+		y_left_split[i] = y_l_v[i];
+	}
+
+	for (int i = 0; i < X_r_v.size(); ++i) {
+		X_right_split.row(i) = X_r_v[i];
+		y_right_split[i] = y_r_v[i];
+	}
+
+	depth++;
+
+	node->threshold = bestThreshold;
+	node->featureIndex = featureSplitIndex;
+	node->yMeanLeft = yMeanLeft;
+	node->yMeanRight = yMeanRight;
+
+	node->left = new Tree(X_left_split, y_left_split);
+	node->right = new Tree(X_right_split, y_right_split);
+
+	splitTreeRegression(node->left, X_left_split, y_left_split, depth);
+	splitTreeRegression(node->right, X_right_split, y_right_split, depth);
+
+}
+
+void DecisionTree::fit_regression(Eigen::MatrixXf& X, Eigen::VectorXf& y, int depth) {
+	this->maxDepth = depth;
+
+	root = new Tree(X, y);
+	
+	this->root = root;
+
+	splitTreeRegression(root, X, y, 1);
+}
+
+float predictRowRegression(Eigen::VectorXf& X, Tree* node) {
+	if (node->right == nullptr && node->left == nullptr) {
+		return 
+	}
+}
+
+std::vector<float> DecisionTree::predict_regression(Eigen::MatrixXf& X) {
+	int numSamples = X.rows();
+
+	std::vector<float> predictions(numSamples);
+
+	for (int i = 0; i < numSamples; ++i) {
+		Eigen::VectorXf X_row = X.row(i);
+		float prediction = predictRowRegression(X_row, this->root);
+	}
+}
+
 void DecisionTree::fit(Eigen::MatrixXf& X, Eigen::VectorXf& y, int depth) {
 
 	this->maxDepth = depth;
