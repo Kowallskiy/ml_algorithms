@@ -14,9 +14,11 @@ struct Tree {
 	Tree* right;
 	float threshold;
 	int featureIndex;
-	Tree() : X_values{}, y_values{}, left(nullptr), right(nullptr), threshold{}, featureIndex{} {}
-	Tree(Eigen::MatrixXf X, Eigen::VectorXf y) : X_values{ X }, y_values{ y }, left(nullptr), right(nullptr), threshold{}, featureIndex{} {}
-	Tree(Eigen::MatrixXf X, Eigen::VectorXf y, Tree* left, Tree* right) : X_values{ X }, y_values{ y }, left(left), right(right), threshold{}, featureIndex{} {}
+	float yMeanLeft;
+	float yMeanRight;
+	Tree() : X_values{}, y_values{}, left(nullptr), right(nullptr), threshold{}, featureIndex{}, yMeanLeft{}, yMeanRight{} {}
+	Tree(Eigen::MatrixXf X, Eigen::VectorXf y) : X_values{ X }, y_values{ y }, left(nullptr), right(nullptr), threshold{}, featureIndex{}, yMeanLeft{}, yMeanRight{} {}
+	Tree(Eigen::MatrixXf X, Eigen::VectorXf y, Tree* left, Tree* right) : X_values{ X }, y_values{ y }, left(left), right(right), threshold{}, featureIndex{}, yMeanLeft{}, yMeanRight{} {}
 
 	~Tree() {
 		delete left;
@@ -34,6 +36,12 @@ public:
 	DecisionTree() : root(nullptr), maxDepth{}, numClasses{} {}
 
 	void fit(Eigen::MatrixXf& X, Eigen::VectorXf& y, int depth);
+
+	void fit_regression(Eigen::MatrixXf& X, Eigen::VectorXf& y, int depth);
+
+	void splitTreeRegression(Tree* node, Eigen::MatrixXf& X, Eigen::VectorXf& y, int depth);
+
+	std::vector<float> predict_regression(Eigen::MatrixXf& X);
 
 	std::vector<std::vector<float>> predict(Eigen::MatrixXf& X);
 
