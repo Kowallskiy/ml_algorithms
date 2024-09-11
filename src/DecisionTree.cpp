@@ -154,8 +154,6 @@ void DecisionTree::splitTreeRegression(Tree* node, Eigen::MatrixXf& X, Eigen::Ve
 	float bestThreshold{ 0.0f };
 	float bestMSE = std::numeric_limits<float>::infinity();
 	int featureSplitIndex{ -1 };
-	float yMeanLeft{};
-	float yMeanRight{};
 
 	for (int c = 0; c < numSamples; ++c) {
 		
@@ -194,8 +192,6 @@ void DecisionTree::splitTreeRegression(Tree* node, Eigen::MatrixXf& X, Eigen::Ve
 				bestMSE = weightedMSE;
 				bestThreshold = threshold;
 				featureSplitIndex = c;
-				yMeanLeft = mseLeft.second;
-				yMeanRight = mseRight.second;
 			}
 		}
 	}
@@ -232,12 +228,17 @@ void DecisionTree::splitTreeRegression(Tree* node, Eigen::MatrixXf& X, Eigen::Ve
 		y_right_split[i] = y_r_v[i];
 	}
 
+	float yMean{ 0.0f };
+	for (int i = 0; i < y.size(); ++i) {
+		yMean += y[i];
+	}
+	yMean = yMean / y.size();
+
 	depth++;
 
 	node->threshold = bestThreshold;
 	node->featureIndex = featureSplitIndex;
-	node->yMeanLeft = yMeanLeft;
-	node->yMeanRight = yMeanRight;
+	node->yMean = yMean;
 
 	node->left = new Tree(X_left_split, y_left_split);
 	node->right = new Tree(X_right_split, y_right_split);
@@ -257,13 +258,21 @@ void DecisionTree::fit_regression(Eigen::MatrixXf& X, Eigen::VectorXf& y, int de
 	splitTreeRegression(root, X, y, 1);
 }
 
-float predictRowRegression(Eigen::VectorXf& X, Tree* node) {
+float predictRowRegression(const Eigen::VectorXf& X, Tree* node) {
 	if (node->right == nullptr && node->left == nullptr) {
-		return 
+		float prediction = node->yMean;
+		return prediction;
+	}
+
+	if (X[node->featureIndex] <= node->threshold) {
+		return predictRowRegression(X, node->left);
+	}
+	else {
+		return predictRowRegression(X, node->right);
 	}
 }
 
-std::vector<float> DecisionTree::predict_regression(Eigen::MatrixXf& X) {
+std::vector<float> DecisionTree::predict_regression(const Eigen::MatrixXf& X) {
 	int numSamples = X.rows();
 
 	std::vector<float> predictions(numSamples);
@@ -271,7 +280,10 @@ std::vector<float> DecisionTree::predict_regression(Eigen::MatrixXf& X) {
 	for (int i = 0; i < numSamples; ++i) {
 		Eigen::VectorXf X_row = X.row(i);
 		float prediction = predictRowRegression(X_row, this->root);
+		predictions[i] = prediction;
 	}
+
+	return predictions;
 }
 
 void DecisionTree::fit(Eigen::MatrixXf& X, Eigen::VectorXf& y, int depth) {
