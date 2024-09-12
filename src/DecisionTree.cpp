@@ -2,6 +2,7 @@
 #pragma warning(disable: 4127)
 
 #include <algorithm>
+#include <iostream>
 #include <Eigen/Dense>
 #include <vector>
 #include <unordered_map>
@@ -28,7 +29,7 @@ void DecisionTree::splitTree(Tree* node, Eigen::MatrixXf& X, Eigen::VectorXf& y,
 	if (this->maxDepth <= depth) {
 		return;
 	}
-	depth++;
+	
 	// gini index
 	// implementation for continuous features
 	Eigen::Index numSamples = X.rows();
@@ -125,6 +126,12 @@ void DecisionTree::splitTree(Tree* node, Eigen::MatrixXf& X, Eigen::VectorXf& y,
 	node->left = new Tree(X_left, y_left);
 	node->right = new Tree(X_right, y_right);
 
+	depth++;
+
+	if (depth == this->maxDepth) {
+		return;
+	}
+
 	splitTree(node->left, X_left, y_left, depth);
 	splitTree(node->right, X_right, y_right, depth);
 
@@ -138,7 +145,7 @@ std::pair<float, float> calculateMSE(std::vector<float>& X, std::vector<float>& 
 	y_mean = y_mean / y.size();
 	float mse{ 0.0f };
 	for (int i = 0; i < y.size(); ++i) {
-		mse += std::pow((y[i] - y_mean), 2);
+		mse += static_cast<float>(std::pow((y[i] - y_mean), 2));
 	}
 	mse = mse / y.size();
 	std::pair<float, float> result{ mse, y_mean };
@@ -155,7 +162,7 @@ void DecisionTree::splitTreeRegression(Tree* node, Eigen::MatrixXf& X, Eigen::Ve
 	float bestMSE = std::numeric_limits<float>::infinity();
 	int featureSplitIndex{ -1 };
 
-	for (int c = 0; c < numSamples; ++c) {
+	for (int c = 0; c < numFeatures; ++c) {
 		
 		std::vector<int> indices(y.size());
 		for (int i = 0; i < y.size(); ++i) {
@@ -171,8 +178,7 @@ void DecisionTree::splitTreeRegression(Tree* node, Eigen::MatrixXf& X, Eigen::Ve
 			sortedFeature[i] = featureVector[indices[i]];
 			sortedY[i] = y[indices[i]];
 		}
-
-		for (int r = 0; r < numFeatures - 1; ++r) {
+		for (int r = 0; r < numSamples - 1; ++r) {
 			float threshold = (sortedFeature[r] + sortedFeature[r + 1]) / 2;
 			std::vector<float> X_left, y_left, X_right, y_right;
 			for (int i = 0; i < r + 1; ++i) {
@@ -213,8 +219,8 @@ void DecisionTree::splitTreeRegression(Tree* node, Eigen::MatrixXf& X, Eigen::Ve
 			y_r_v.push_back(y[i]);
 		}
 	}
-	X_left_split.resize(X_l_v.size(), y.size());
-	X_right_split.resize(X_r_v.size(), y.size());
+	X_left_split.resize(X_l_v.size(), numFeatures);
+	X_right_split.resize(X_r_v.size(), numFeatures);
 	y_left_split.resize(y_l_v.size());
 	y_right_split.resize(y_r_v.size());
 
@@ -234,11 +240,21 @@ void DecisionTree::splitTreeRegression(Tree* node, Eigen::MatrixXf& X, Eigen::Ve
 	}
 	yMean = yMean / y.size();
 
-	depth++;
-
 	node->threshold = bestThreshold;
 	node->featureIndex = featureSplitIndex;
 	node->yMean = yMean;
+
+	std::cout << "Threshold: " << node->threshold << '\n';
+	std::cout << "Feature Index: " << node->featureIndex << '\n';
+	std::cout << "Y mean in the node: " << node->yMean << '\n';
+	std::cout << "Depth: " << depth + 1 << '\n';
+	std::cout << '\n';
+
+	depth++;
+
+	if (depth == this->maxDepth) {
+		return;
+	}
 
 	node->left = new Tree(X_left_split, y_left_split);
 	node->right = new Tree(X_right_split, y_right_split);
@@ -255,25 +271,37 @@ void DecisionTree::fit_regression(Eigen::MatrixXf& X, Eigen::VectorXf& y, int de
 	
 	this->root = root;
 
-	splitTreeRegression(root, X, y, 1);
+	splitTreeRegression(root, X, y, 0);
+
 }
 
 float predictRowRegression(const Eigen::VectorXf& X, Tree* node) {
 	if (node->right == nullptr && node->left == nullptr) {
 		float prediction = node->yMean;
+		std::cout << "Predict Row Y Mean: " << node->yMean << '\n';
+		std::cout << "Predict Threshold: " << node->threshold << '\n';
 		return prediction;
 	}
 
 	if (X[node->featureIndex] <= node->threshold) {
+		std::cout << "Predict Row Y Mean: " << node->yMean << '\n';
+		std::cout << "Predict Threshold: " << node->threshold << '\n';
+		std::cout << '\n';
 		return predictRowRegression(X, node->left);
 	}
 	else {
+		std::cout << "Predict Row Y Mean: " << node->yMean << '\n';
+		std::cout << "Predict Threshold: " << node->threshold << '\n';
+		std::cout << '\n';
 		return predictRowRegression(X, node->right);
 	}
 }
 
 std::vector<float> DecisionTree::predict_regression(const Eigen::MatrixXf& X) {
-	int numSamples = X.rows();
+	Eigen::Index numSamples = X.rows();
+
+	std::cout << "Root Mean: " << this->root->yMean << '\n';
+	std::cout << '\n';
 
 	std::vector<float> predictions(numSamples);
 
@@ -298,7 +326,7 @@ void DecisionTree::fit(Eigen::MatrixXf& X, Eigen::VectorXf& y, int depth) {
 
 	root = new Tree(X, y);
 
-	splitTree(root, X, y, 1);
+	splitTree(root, X, y, 0);
 }
 
 std::vector<float> DecisionTree::predictSingleRow(const Eigen::VectorXf& X_row, Tree* node) {
