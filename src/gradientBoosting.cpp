@@ -17,12 +17,11 @@ void XGB::fit(Eigen::MatrixXf& X, Eigen::VectorXf& y, int depth) {
 		classes.insert(y(i));
 	}
 
-	float numClasses = classes.size();
+	size_t numClasses = classes.size();
 
 	model.fit(X, y, depth);
 
 	std::vector<std::vector<float>> predictions = model.predict(X);
-	// predictions.first - classes; predictions.second - probabilities
 
 	float crossEntropyLoss{ 0.0f };
 	Eigen::MatrixXf residuals(y.size(), numClasses);
@@ -34,12 +33,11 @@ void XGB::fit(Eigen::MatrixXf& X, Eigen::VectorXf& y, int depth) {
 
 		for (int j = 0; j < numClasses; ++j) {
 			if (j == trueLabel) {
-				residuals(i, j) += predictions[i][y(i)] - 1;
+				residuals(i, j) += predictions[i][static_cast<int>(y(i))] - 1;
 			}
 			else {
-				residuals(i, j) += predictions[i][y(i)];
+				residuals(i, j) += predictions[i][static_cast<int>(y(i))];
 			}
-
 		}
 	}
 	
@@ -47,7 +45,8 @@ void XGB::fit(Eigen::MatrixXf& X, Eigen::VectorXf& y, int depth) {
 
 	for (int c = 0; c < numClasses; ++c) {
 		Eigen::VectorXf classResiduals = residuals.col(c);
-		residualModels[c].fit(X, classResiduals, depth);
+		residualModels[c].fit_regression(X, classResiduals, depth);
+		std::vector<float> predictions = residualModels[c].predict_regression(X);
 	}
 
 }
