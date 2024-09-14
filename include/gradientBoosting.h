@@ -7,9 +7,13 @@
 #include "DecisionTree.h"
 
 class XGB {
+private:
+	size_t numClasses;
+	std::vector<DecisionTree> residualModels;
+
 public:
 
-	void fit(Eigen::MatrixXf& X, Eigen::VectorXf& y, int depth);
+	void fit(Eigen::MatrixXf& X, Eigen::VectorXf& y, int n_estimators, int depth);
 
 	Eigen::VectorXf predict(Eigen::MatrixXf& X);
 
