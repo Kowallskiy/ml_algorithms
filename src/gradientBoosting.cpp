@@ -9,7 +9,7 @@
 #include "gradientBoosting.h"
 
 
-std::vector<float> softmax(const std::vector<float>& pred) {
+std::vector<float> softmax(Eigen::VectorXf& pred) {
 	std::vector<float> soft(pred.size());
 
 	float sumExp{ 0.0f };
@@ -27,7 +27,7 @@ std::vector<float> softmax(const std::vector<float>& pred) {
 	return soft;
 }
 
-void XGB::fit(Eigen::MatrixXf& X, Eigen::VectorXf& y, int depth) {
+void XGB::fit(Eigen::MatrixXf& X, Eigen::VectorXf& y, int n_estimators, int depth) {
 
 	Eigen::Index numSamples = X.rows();
 
@@ -37,15 +37,18 @@ void XGB::fit(Eigen::MatrixXf& X, Eigen::VectorXf& y, int depth) {
 	}
 
 	size_t numClasses = classes.size();
+	this->numClasses = numClasses;
 
-	std::vector<std::vector<float>> logits(numSamples, std::vector<float>(numClasses, 0.0f));
+	Eigen::MatrixXf logits(numSamples, numClasses);
+	logits.setZero();
 
 	for (int iteration = 0; iteration < n_estimators; ++iteration) {
 
 		std::vector<std::vector<float>> probabilities(numSamples, std::vector<float>(numClasses));
 
-		for (int i = 0; i < logits.size(); ++i) {
-			probabilities[i] = softmax(logits[i]);
+		for (int i = 0; i < logits.rows(); ++i) {
+			Eigen::VectorXf logit = logits.row(i);
+			probabilities[i] = softmax(logit);
 		}
 		
 		Eigen::MatrixXf residuals(y.size(), numClasses);
@@ -78,11 +81,43 @@ void XGB::fit(Eigen::MatrixXf& X, Eigen::VectorXf& y, int depth) {
 				eigenResiduals(i) = residualPredictions[i];
 			}
 
-			logits.col(c) += residualPredictions[r] * lr;
+			logits.col(c) += eigenResiduals * lr;
 		}
 
-		
-
-		std::cout << "Just fot the debuggind logits[1][1]: " << logits[1][1] << '\n';
+		std::cout << "Just fot the debuggind logits: " << logits(1, 1) << '\n';
 	}
+
+	this->residualModels = residualModels;
+}
+
+Eigen::VectorXf XGB::predict(Eigen::MatrixXf& X) {
+	Eigen::Index numSamples = X.rows();
+
+	Eigen::MatrixXf logits(numSamples, this->numClasses);
+	logits.setZero();
+
+	float lr = 0.01f;
+
+	for (int c = 0; c < this->numClasses; ++c) {
+		std::vector<float> residualPredictions = this->residualModels[c].predict_regression(X);
+		Eigen::VectorXf eigenResiduals(residualPredictions.size());
+
+		for (int i = 0; i < residualPredictions.size(); ++i) {
+			eigenResiduals(i) = residualPredictions[i];
+		}
+
+		logits.col(c) += eigenResiduals * lr;
+	}
+
+	Eigen::VectorXf predictions(numSamples);
+	for (int i = 0; i < numSamples; ++i) {
+		Eigen::VectorXf pred = logits.row(i);
+		std::vector<float> probabilities = softmax(pred);
+
+		int maxClass = std::distance(probabilities.begin(), std::max_element(probabilities.begin(), probabilities.end()));
+		predictions(i) = static_cast<float>(maxClass);
+	}
+
+	return predictions;
+
 }
