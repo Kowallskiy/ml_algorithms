@@ -12,10 +12,12 @@
 std::vector<float> softmax(Eigen::VectorXf& pred) {
 	std::vector<float> soft(pred.size());
 
+	float maxVal = pred.maxCoeff();
+
 	float sumExp{ 0.0f };
 
 	for (int i = 0; i < pred.size(); ++i) {
-		float tempExp = std::exp(pred[i]);
+		float tempExp = std::exp(pred[i] - maxVal);
 		soft[i] = tempExp;
 		sumExp += tempExp;
 	}
@@ -28,6 +30,8 @@ std::vector<float> softmax(Eigen::VectorXf& pred) {
 }
 
 void XGB::fit(Eigen::MatrixXf& X, Eigen::VectorXf& y, int n_estimators, int depth) {
+
+	this->n_estimators = n_estimators;
 
 	Eigen::Index numSamples = X.rows();
 
@@ -52,10 +56,10 @@ void XGB::fit(Eigen::MatrixXf& X, Eigen::VectorXf& y, int n_estimators, int dept
 		}
 		
 		Eigen::MatrixXf residuals(y.size(), numClasses);
+		residuals.setZero();
 
 		for (int i = 0; i < y.size(); ++i) {
 			int trueLabel = static_cast<int>(y(i));
-			float logit = probabilities[i][trueLabel];
 
 			for (int j = 0; j < numClasses; ++j) {
 				if (j == trueLabel) {
@@ -85,7 +89,7 @@ void XGB::fit(Eigen::MatrixXf& X, Eigen::VectorXf& y, int n_estimators, int dept
 			std::cout << "Logits after: " << logits << '\n';
 		}
 
-		this->residualModels = residualModels;
+		this->residualModels.push_back(residualModels);
 
 		std::cout << "Just fot the debuggind logits: " << logits(1, 1) << '\n';
 	}
@@ -99,18 +103,18 @@ Eigen::VectorXf XGB::predict(Eigen::MatrixXf& X) {
 
 	float lr = 0.01f;
 
-	std::cout << "START PREDICTION!!!!" << '\n';
+	for (int n = 0; n < this->n_estimators; ++n) {
+		for (int c = 0; c < this->numClasses; ++c) {
+			std::vector<float> residualPredictions = this->residualModels[n][c].predict_regression(X);
 
-	for (int c = 0; c < this->numClasses; ++c) {
-		std::vector<float> residualPredictions = this->residualModels[c].predict_regression(X);
-		std::cout << "SUCCESFULLY PREDICTED!!!" << '\n';
-		Eigen::VectorXf eigenResiduals(residualPredictions.size());
+			Eigen::VectorXf eigenResiduals(residualPredictions.size());
 
-		for (int i = 0; i < residualPredictions.size(); ++i) {
-			eigenResiduals(i) = residualPredictions[i];
+			for (int i = 0; i < residualPredictions.size(); ++i) {
+				eigenResiduals(i) = residualPredictions[i];
+			}
+
+			logits.col(c) += eigenResiduals * lr;
 		}
-
-		logits.col(c) += eigenResiduals * lr;
 	}
 
 	Eigen::VectorXf predictions(numSamples);
