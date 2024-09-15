@@ -80,14 +80,15 @@ void XGB::fit(Eigen::MatrixXf& X, Eigen::VectorXf& y, int n_estimators, int dept
 			for (int i = 0; i < eigenResiduals.size(); ++i) {
 				eigenResiduals(i) = residualPredictions[i];
 			}
-
+			std::cout << "Logits before: " << logits << '\n';
 			logits.col(c) += eigenResiduals * lr;
+			std::cout << "Logits after: " << logits << '\n';
 		}
+
+		this->residualModels = residualModels;
 
 		std::cout << "Just fot the debuggind logits: " << logits(1, 1) << '\n';
 	}
-
-	this->residualModels = residualModels;
 }
 
 Eigen::VectorXf XGB::predict(Eigen::MatrixXf& X) {
@@ -98,8 +99,11 @@ Eigen::VectorXf XGB::predict(Eigen::MatrixXf& X) {
 
 	float lr = 0.01f;
 
+	std::cout << "START PREDICTION!!!!" << '\n';
+
 	for (int c = 0; c < this->numClasses; ++c) {
 		std::vector<float> residualPredictions = this->residualModels[c].predict_regression(X);
+		std::cout << "SUCCESFULLY PREDICTED!!!" << '\n';
 		Eigen::VectorXf eigenResiduals(residualPredictions.size());
 
 		for (int i = 0; i < residualPredictions.size(); ++i) {
@@ -114,7 +118,7 @@ Eigen::VectorXf XGB::predict(Eigen::MatrixXf& X) {
 		Eigen::VectorXf pred = logits.row(i);
 		std::vector<float> probabilities = softmax(pred);
 
-		int maxClass = std::distance(probabilities.begin(), std::max_element(probabilities.begin(), probabilities.end()));
+		int maxClass = static_cast<int>(std::distance(probabilities.begin(), std::max_element(probabilities.begin(), probabilities.end())));
 		predictions(i) = static_cast<float>(maxClass);
 	}
 
