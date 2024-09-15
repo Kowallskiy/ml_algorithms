@@ -9,7 +9,8 @@
 class XGB {
 private:
 	size_t numClasses;
-	std::vector<DecisionTree> residualModels;
+	std::vector<std::vector<DecisionTree>> residualModels;
+	int n_estimators;
 
 public:
 
