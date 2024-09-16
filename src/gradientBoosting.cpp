@@ -84,9 +84,9 @@ void XGB::fit(Eigen::MatrixXf& X, Eigen::VectorXf& y, int n_estimators, int dept
 			for (int i = 0; i < eigenResiduals.size(); ++i) {
 				eigenResiduals(i) = residualPredictions[i];
 			}
-			std::cout << "Logits before: " << logits << '\n';
+
 			logits.col(c) += eigenResiduals * lr;
-			std::cout << "Logits after: " << logits << '\n';
+
 		}
 
 		this->residualModels.push_back(residualModels);
