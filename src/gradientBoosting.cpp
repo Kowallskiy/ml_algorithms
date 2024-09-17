@@ -63,10 +63,10 @@ void XGB::fit(Eigen::MatrixXf& X, Eigen::VectorXf& y, int n_estimators, int dept
 
 			for (int j = 0; j < numClasses; ++j) {
 				if (j == trueLabel) {
-					residuals(i, j) += probabilities[i][static_cast<int>(y(i))] - 1;
+					residuals(i, j) += probabilities[i][j] - 1;
 				}
 				else {
-					residuals(i, j) += probabilities[i][static_cast<int>(y(i))];
+					residuals(i, j) += probabilities[i][j];
 				}
 			}
 		}
@@ -120,8 +120,11 @@ Eigen::VectorXf XGB::predict(Eigen::MatrixXf& X) {
 	Eigen::VectorXf predictions(numSamples);
 	for (int i = 0; i < numSamples; ++i) {
 		Eigen::VectorXf pred = logits.row(i);
-		std::vector<float> probabilities = softmax(pred);
 
+		std::cout << "Class logits: " << pred << '\n';
+
+		std::vector<float> probabilities = softmax(pred);
+		
 		int maxClass = static_cast<int>(std::distance(probabilities.begin(), std::max_element(probabilities.begin(), probabilities.end())));
 		predictions(i) = static_cast<float>(maxClass);
 	}
