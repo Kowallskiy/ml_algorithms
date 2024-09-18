@@ -112,7 +112,7 @@ Eigen::VectorXf XGB::predict(Eigen::MatrixXf& X) {
 			for (int i = 0; i < residualPredictions.size(); ++i) {
 				eigenResiduals(i) = residualPredictions[i];
 			}
-
+			// accumulate logits to make predictions
 			logits.col(c) += eigenResiduals * lr;
 		}
 	}
