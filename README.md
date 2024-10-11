@@ -6,6 +6,7 @@ This project is a collection of five core machine-learning algorithms implemente
 * [K-Nearest Neighbors](https://github.com/Kowallskiy/ml_algorithms/blob/main/src/KNN.cpp)
 * [K-Means Clustering](https://github.com/Kowallskiy/ml_algorithms/blob/main/src/KMeans.cpp)
 * [Decision Tree](https://github.com/Kowallskiy/ml_algorithms/blob/main/src/DecisionTree.cpp)
+* [XGBClassifier](https://github.com/Kowallskiy/ml_algorithms/blob/main/src/gradientBoosting.cpp)
   
 The models are fully integrated into Python using Pybind11. This integration allows seamless use of the models in Python scripts, 
 combining the performance of C++ with the flexibility of Python. The project demonstrates proficiency in both C++ and Python, particularly in creating 
